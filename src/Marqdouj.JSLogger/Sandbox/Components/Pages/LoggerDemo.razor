@@ -2,26 +2,52 @@
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 @inject IJSRuntime JS
+@inject IJSLoggerService LoggerService
 
-<FluentToolbar>
-    <FluentButton @onclick="TestLogger">Test All</FluentButton>
-    <FluentSpacer />
-    <FluentButton @onclick="(() => TestLogger(LogLevel.Trace))">Trace</FluentButton>
-    <FluentButton @onclick="(() => TestLogger(LogLevel.Debug))">Debug</FluentButton>
-    <FluentButton @onclick="(() => TestLogger(LogLevel.Information))">Information</FluentButton>
-    <FluentButton @onclick="(() => TestLogger(LogLevel.Warning))">Warning</FluentButton>
-    <FluentButton @onclick="(() => TestLogger(LogLevel.Error))">Error</FluentButton>
-    <FluentButton @onclick="(() => TestLogger(LogLevel.Critical))">Critical</FluentButton>
-</FluentToolbar>
+<FluentStack Orientation="Orientation.Vertical">
+    <FluentCard>
+        <FluentLabel>Using JSLogger (IJSObjectReference)</FluentLabel>
+
+        <FluentToolbar>
+            <FluentButton @onclick="(() => TestLogger())">Test All</FluentButton>
+            <FluentSpacer />
+            <FluentButton @onclick="(() => TestLogger(LogLevel.Trace))">Trace</FluentButton>
+            <FluentButton @onclick="(() => TestLogger(LogLevel.Debug))">Debug</FluentButton>
+            <FluentButton @onclick="(() => TestLogger(LogLevel.Information))">Information</FluentButton>
+            <FluentButton @onclick="(() => TestLogger(LogLevel.Warning))">Warning</FluentButton>
+            <FluentButton @onclick="(() => TestLogger(LogLevel.Error))">Error</FluentButton>
+            <FluentButton @onclick="(() => TestLogger(LogLevel.Critical))">Critical</FluentButton>
+        </FluentToolbar>
+    </FluentCard>
+
+    <FluentCard>
+        <FluentLabel>Using JSLoggerService (IJSRuntime)</FluentLabel>
+        <FluentToolbar>
+            <FluentButton @onclick="(() => TestLogger(true))">Test All</FluentButton>
+            <FluentSpacer />
+            <FluentButton @onclick="(() => TestLogger(LogLevel.Trace, true))">Trace</FluentButton>
+            <FluentButton @onclick="(() => TestLogger(LogLevel.Debug, true))">Debug</FluentButton>
+            <FluentButton @onclick="(() => TestLogger(LogLevel.Information, true))">Information</FluentButton>
+            <FluentButton @onclick="(() => TestLogger(LogLevel.Warning, true))">Warning</FluentButton>
+            <FluentButton @onclick="(() => TestLogger(LogLevel.Error, true))">Error</FluentButton>
+            <FluentButton @onclick="(() => TestLogger(LogLevel.Critical, true))">Critical</FluentButton>
+        </FluentToolbar>
+    </FluentCard>
+</FluentStack>
 
 @code {
-    private Logger? module;
+    private JSLogger? module;
+
+    protected override void OnInitialized()
+    {
+        LoggerService.Config.SetLevel(LogLevel.Trace, LogLevel.Critical);
+    }
 
     protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
         {
-            module = new Logger<LoggerDemo>(JS, LogLevel.Trace);
+            module = new JSLogger<LoggerDemo>(JS, LogLevel.Trace);
         }
     }
 
@@ -39,41 +65,51 @@
         }
     }
 
-    private async Task TestLogger()
+    private async Task TestLogger(bool useService = false)
     {
-        await module!.Test("Test All Demo");
+        if (useService)
+        {
+            await LoggerService.Test("Test All from Service");
+        }
+        else
+        {
+            await module!.Test("Test All from Module");
+        }
     }
 
-    private async Task TestLogger(LogLevel level)
+    private async Task TestLogger(LogLevel level, bool useService = false)
     {
+        IJSLogger logger = useService ? LoggerService : module!;
+        var eventName = useService ? "Logger Service" : "Logger Module";
+
         switch (level)
         {
             case LogLevel.Trace:
-                await module!.LogTrace("Trace message from logger demo page.");
+                await logger.LogTrace("Trace message from logger demo page.", eventName);
                 break;
             case LogLevel.Debug:
-                await module!.LogDebug("Debug message from logger demo page.");
+                await logger.LogDebug("Debug message from logger demo page.", eventName);
                 break;
             case LogLevel.Information:
-                await module!.LogInformation("Information message from logger demo page.");
+                await logger.LogInformation("Information message from logger demo page.", eventName);
                 break;
             case LogLevel.Warning:
-                await module!.LogWarning("Warning message from logger demo page.");
+                await logger.LogWarning("Warning message from logger demo page.", eventName);
                 break;
             case LogLevel.Error:
-                await module!.LogError("Error message from logger demo page.");
+                await logger.LogError("Error message from logger demo page.", eventName);
                 try
                 {
                     throw new Exception("try/catch Exception from logger demo page.");
                 }
                 catch (Exception ex)
                 {
-                    await module!.LogError(ex, "Error message from logger demo page.");
+                    await logger.LogError(ex, eventName);
                 }
                 
                 break;
             case LogLevel.Critical:
-                await module!.LogCritical("Critical message from logger demo page.");
+                await logger.LogCritical("Critical message from logger demo page.", eventName);
                 break;
             default:
                 break;

@@ -2,9 +2,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Marqdouj.JSLogger
 {
-    public interface ILoggerConfig
+    public interface IJSLoggerConfig : ICloneable
     {
-        static abstract string DefaultTemplate { get; set; }
+        string DefaultTemplate { get; set; }
         string Category { get; }
         bool IsEnabled(LogLevel logLevel);
         LogLevel MaxLevel { get; }
@@ -14,11 +14,11 @@ namespace Marqdouj.JSLogger
         void SetLevel(LogLevel min, LogLevel max);
     }
 
-    public class LoggerConfig : ILoggerConfig
+    public class JSLoggerConfig : IJSLoggerConfig
     {
-        static string defaultTemplate = "{category}{event}{timestamp}{level}: {message}";
+        private static string defaultTemplate = "{category}{event}{timestamp}{level}: {message}";
 
-        public static string DefaultTemplate
+        public string DefaultTemplate
         {
             get => defaultTemplate;
             set
@@ -28,9 +28,8 @@ namespace Marqdouj.JSLogger
             }
         }
 
-        public LoggerConfig(string category, LogLevel min = LogLevel.Information, LogLevel max = LogLevel.Critical, string template = "")
+        public JSLoggerConfig(string category = "", LogLevel min = LogLevel.Information, LogLevel max = LogLevel.Critical, string template = "")
         {
-            ArgumentNullException.ThrowIfNullOrWhiteSpace(category, nameof(category));
             Category = category;
             Template = string.IsNullOrWhiteSpace(template) ? DefaultTemplate : template;
             SetLevel(min, max);
@@ -54,6 +53,11 @@ namespace Marqdouj.JSLogger
             }
             MinLevel = min;
             MaxLevel = max;
+        }
+
+        public object Clone()
+        {
+            return MemberwiseClone();
         }
     }
 }

@@ -1,35 +1,29 @@
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using System.Text;
 
 namespace Marqdouj.JSLogger
 {
-    public class Logger<T>(
-        IJSRuntime jsRuntime,
-        LogLevel min = LogLevel.Information,
-        LogLevel max = LogLevel.Critical,
-        string template = "") : Logger(jsRuntime, typeof(T).Name, min, max, template) where T : class
+    public interface IJSLoggerService : IJSLogger
     {
     }
 
-    public class Logger(
-        IJSRuntime jsRuntime,
-        string category,
-        LogLevel min = LogLevel.Information,
-        LogLevel max = LogLevel.Critical,
-        string template = "") : IAsyncDisposable
+    public class JSLoggerService(
+            IJSRuntime jsRuntime,
+            IJSLoggerConfig config) : IJSLoggerService
     {
-        private readonly Lazy<Task<IJSObjectReference>> moduleTask = new(() => jsRuntime.InvokeAsync<IJSObjectReference>(
-                "import", "./_content/Marqdouj.JSLogger/js/jsLogger.js").AsTask());
-
-        public ILoggerConfig Config { get; init; } = new LoggerConfig(category, min, max, template);
-
-        public bool IsEnabled(LogLevel logLevel) => Config.IsEnabled(logLevel);
+        private readonly IJSRuntime jsRuntime = jsRuntime;
 
         /// <summary>
-        /// By default, the LogError method does not include the exception details.
+        /// Flag to log the exception details.
         /// </summary>
         public bool DetailedErrors { get; set; } = true;
+
+        public IJSLoggerConfig Config { get; } = (IJSLoggerConfig)config.Clone();
+
+        public bool IsEnabled(LogLevel logLevel) => Config.IsEnabled(logLevel);
 
         public async ValueTask LogTrace(string message, string eventId = "")
         {
@@ -78,32 +72,19 @@ namespace Marqdouj.JSLogger
             await Log(LogLevel.Critical, message, eventId);
         }
 
-        public async ValueTask Log(LogLevel logLevel, string message, string eventId = "") 
+        public async ValueTask Log(LogLevel logLevel, string message, string eventId = "")
         {
             if (!IsEnabled(logLevel))
                 return;
 
             var logEvent = BuildLogEventIdentifier(logLevel);
-            var module = await moduleTask.Value;
-
-            await module.InvokeVoidAsync(logEvent, Config, message, eventId);
+            await jsRuntime.InvokeVoidAsync(logEvent, Config, message, eventId);
         }
 
         public async ValueTask Test(string message = "")
         {
-            var module = await moduleTask.Value;
-            await module.InvokeVoidAsync("test", Config, message);
+            await jsRuntime.InvokeVoidAsync("MarqdoujJsl.test", Config, message);
         }
-
-        public async ValueTask DisposeAsync()
-        {
-            if (moduleTask.IsValueCreated)
-            {
-                var module = await moduleTask.Value;
-                await module.DisposeAsync();
-            }
-        }
-
         private static string BuildLogEventIdentifier(LogLevel logLevel)
         {
             string? logLevelName = logLevel switch
@@ -116,8 +97,19 @@ namespace Marqdouj.JSLogger
                 LogLevel.Critical => "Critical",
                 _ => throw new ArgumentOutOfRangeException(nameof(logLevel), logLevel, "LogLevel not supported for logging."),
             };
-            var path = $"Logger.log{logLevelName}";
+            var path = $"MarqdoujJsl.Logger.log{logLevelName}";
             return path;
+        }
+
+    }
+
+    public static class LoggerServiceExtensions
+    {
+        public static IHostApplicationBuilder AddLoggerService(this IHostApplicationBuilder builder, IJSLoggerConfig config)
+        {
+            builder.Services.AddSingleton(config);
+            builder.Services.AddScoped<IJSLoggerService, JSLoggerService>();
+            return builder;
         }
     }
 }

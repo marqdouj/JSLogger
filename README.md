@@ -7,5 +7,12 @@
 See the 'Sandbox' demo in the 'src' folder for a working example.
 
 ### Release Notes
+- 8.1.0 
+  - **Breaking Changes** 
+    - Renamed `Logger` to `JSLogger` and `LoggerConfig` to `JSLoggerConfig`.
+  - Added JSLoggerService that uses IJSRuntime directly via loaded script
+rather than the IJSObjectReference module.
+    - see `App.razor` for the script reference and `Program.cs` for the service registration.
+    - NOTE: The loaded script could also be used directly in your own *.js file.
 - 8.0.0 - Initial release for .NET 8
 

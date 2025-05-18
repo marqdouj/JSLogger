@@ -1,5 +1,6 @@
 using Microsoft.FluentUI.AspNetCore.Components;
 using Sandbox.Components;
+using Marqdouj.JSLogger;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddFluentUIComponents();
+
+builder.AddLoggerService(new JSLoggerConfig());
 
 var app = builder.Build();
 

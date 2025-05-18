@@ -5,7 +5,10 @@
     "removeComments": false,
     "sourceMap": false,
     "outDir": "wwwroot/js",
-    "target": "ESNext"
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true
   },
   "files": [ "scripts/jsLogger.ts" ],
   "compileOnSave": true,
