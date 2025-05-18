@@ -1,0 +1,82 @@
+﻿@page "/logger-demo"
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<FluentToolbar>
+    <FluentButton @onclick="TestLogger">Test All</FluentButton>
+    <FluentSpacer />
+    <FluentButton @onclick="(() => TestLogger(LogLevel.Trace))">Trace</FluentButton>
+    <FluentButton @onclick="(() => TestLogger(LogLevel.Debug))">Debug</FluentButton>
+    <FluentButton @onclick="(() => TestLogger(LogLevel.Information))">Information</FluentButton>
+    <FluentButton @onclick="(() => TestLogger(LogLevel.Warning))">Warning</FluentButton>
+    <FluentButton @onclick="(() => TestLogger(LogLevel.Error))">Error</FluentButton>
+    <FluentButton @onclick="(() => TestLogger(LogLevel.Critical))">Critical</FluentButton>
+</FluentToolbar>
+
+@code {
+    private Logger? module;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            module = new Logger<LoggerDemo>(JS, LogLevel.Trace);
+        }
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (module is not null)
+        {
+            try
+            {
+                await module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+
+    private async Task TestLogger()
+    {
+        await module!.Test("Test All Demo");
+    }
+
+    private async Task TestLogger(LogLevel level)
+    {
+        switch (level)
+        {
+            case LogLevel.Trace:
+                await module!.LogTrace("Trace message from logger demo page.");
+                break;
+            case LogLevel.Debug:
+                await module!.LogDebug("Debug message from logger demo page.");
+                break;
+            case LogLevel.Information:
+                await module!.LogInformation("Information message from logger demo page.");
+                break;
+            case LogLevel.Warning:
+                await module!.LogWarning("Warning message from logger demo page.");
+                break;
+            case LogLevel.Error:
+                await module!.LogError("Error message from logger demo page.");
+                try
+                {
+                    throw new Exception("try/catch Exception from logger demo page.");
+                }
+                catch (Exception ex)
+                {
+                    await module!.LogError(ex, "Error message from logger demo page.");
+                }
+                
+                break;
+            case LogLevel.Critical:
+                await module!.LogCritical("Critical message from logger demo page.");
+                break;
+            default:
+                break;
+        }
+    }
+}
