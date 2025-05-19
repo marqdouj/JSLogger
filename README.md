@@ -7,6 +7,9 @@
 See the 'Sandbox' demo in the 'src' folder for a working example.
 
 ### Release Notes
+- 8.1.1
+  - Added `LogRaw` method to log raw (not formatted with template) messages with optional style.
+    - i.e. `LogRaw("Hello World", "color: red; font-size: 20px;")`
 - 8.1.0 
   - **Breaking Changes** 
     - Renamed `Logger` to `JSLogger` and `LoggerConfig` to `JSLoggerConfig`.

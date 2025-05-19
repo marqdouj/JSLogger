@@ -11,6 +11,8 @@
         <FluentToolbar>
             <FluentButton @onclick="(() => TestLogger())">Test All</FluentButton>
             <FluentSpacer />
+            <FluentButton @onclick="(() => TestRaw())">Test Raw</FluentButton>
+            <FluentSpacer />
             <FluentButton @onclick="(() => TestLogger(LogLevel.Trace))">Trace</FluentButton>
             <FluentButton @onclick="(() => TestLogger(LogLevel.Debug))">Debug</FluentButton>
             <FluentButton @onclick="(() => TestLogger(LogLevel.Information))">Information</FluentButton>
@@ -24,6 +26,8 @@
         <FluentLabel>Using JSLoggerService (IJSRuntime)</FluentLabel>
         <FluentToolbar>
             <FluentButton @onclick="(() => TestLogger(true))">Test All</FluentButton>
+            <FluentSpacer />
+            <FluentButton @onclick="(() => TestRaw(true))">Test Raw</FluentButton>
             <FluentSpacer />
             <FluentButton @onclick="(() => TestLogger(LogLevel.Trace, true))">Trace</FluentButton>
             <FluentButton @onclick="(() => TestLogger(LogLevel.Debug, true))">Debug</FluentButton>
@@ -65,14 +69,28 @@
         }
     }
 
+    private async Task TestRaw(bool useService = false)
+    {
+        if (useService)
+        {
+            await LoggerService.LogRaw("Test 'Raw' from Service", "color: orange; font-size: 20px;");
+        }
+        else
+        {
+            await module!.LogRaw("Test 'Raw' from Module", "color: orange; font-size: 20px;");
+        }
+    }
+
     private async Task TestLogger(bool useService = false)
     {
         if (useService)
         {
+            await LoggerService.LogRaw("Test 'Raw' from Service", "color: orange; font-size: 20px;");
             await LoggerService.Test("Test All from Service");
         }
         else
         {
+            await module!.LogRaw("Test 'Raw' from Module", "color: orange; font-size: 20px;");
             await module!.Test("Test All from Module");
         }
     }

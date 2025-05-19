@@ -131,8 +131,14 @@ export class Logger {
         return level != LogLevel.none && level >= config.minLevel && level <= config.maxLevel;
     }
 
-    public static logRaw(config: ILoggerConfig, level: LogLevel, message: string): void {
-        this.logMessage(config, level, message);
+    public static logRaw(message: string, style: string = ""): void {
+        if (typeof message !== 'string') {
+            message = 'log requested but message is not a string';
+        }
+        if (message.length === 0) {
+            message = 'log requested but message is empty';
+        }
+        console.log(`${"%c"}${message}`, style);
     }
 
     public static log(config: ILoggerConfig, level: LogLevel, message: string, event: string = ""): void {

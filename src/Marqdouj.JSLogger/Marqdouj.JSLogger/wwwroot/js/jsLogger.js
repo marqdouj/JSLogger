@@ -98,8 +98,14 @@ export class Logger {
     static isEnabled(config, level) {
         return level != LogLevel.none && level >= config.minLevel && level <= config.maxLevel;
     }
-    static logRaw(config, level, message) {
-        this.logMessage(config, level, message);
+    static logRaw(message, style = "") {
+        if (typeof message !== 'string') {
+            message = 'log requested but message is not a string';
+        }
+        if (message.length === 0) {
+            message = 'log requested but message is empty';
+        }
+        console.log(`${"%c"}${message}`, style);
     }
     static log(config, level, message, event = "") {
         let fMessage = formatMessage(config.template, config.category, level, event, message);

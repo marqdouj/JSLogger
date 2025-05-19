@@ -18,6 +18,7 @@ namespace Marqdouj.JSLogger
         bool DetailedErrors { get; set; }
 
         bool IsEnabled(LogLevel logLevel);
+        ValueTask LogRaw(string message, string style = "");
         ValueTask Log(LogLevel logLevel, string message, string eventId = "");
         ValueTask LogCritical(string message, string eventId = "");
         ValueTask LogDebug(string message, string eventId = "");
@@ -47,6 +48,12 @@ namespace Marqdouj.JSLogger
         /// Flag to log the exception details.
         /// </summary>
         public bool DetailedErrors { get; set; } = true;
+
+        public async ValueTask LogRaw(string message, string style = "")
+        {
+            var module = await moduleTask.Value;
+            await module.InvokeVoidAsync("Logger.logRaw", message, style);
+        }
 
         public async ValueTask LogTrace(string message, string eventId = "")
         {

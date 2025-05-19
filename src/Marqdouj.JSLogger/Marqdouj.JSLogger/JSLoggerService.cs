@@ -25,6 +25,11 @@ namespace Marqdouj.JSLogger
 
         public bool IsEnabled(LogLevel logLevel) => Config.IsEnabled(logLevel);
 
+        public async ValueTask LogRaw(string message, string style = "")
+        {
+            await jsRuntime.InvokeVoidAsync("MarqdoujJsl.Logger.logRaw", message, style);
+        }
+
         public async ValueTask LogTrace(string message, string eventId = "")
         {
             await Log(LogLevel.Trace, message, eventId);
