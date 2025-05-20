@@ -6,6 +6,12 @@
 ### Usage
 See the 'Sandbox' demo in the 'src' folder for a working example.
 
+## Under Investigation
+When adding the package to a VS Blazor project and trying to build, you may encounter a
+"DiscoverPrecompressedAssets" task failed unexpectedly error.
+
+Note: This does not happen in the `Sandbox` demo project; as it references the project directly in the solution.
+
 ### Release Notes
 - 8.2.0
   - Resolved issue with `Dependencies` reference to `NPM` being shown in Visual Studio
