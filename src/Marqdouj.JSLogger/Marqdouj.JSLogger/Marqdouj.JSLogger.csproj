@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>8.1.1</Version>
+    <Version>8.2.0</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>JS Console Logger for Blazor</Title>
     <PackageProjectUrl>https://github.com/marqdouj/JSLogger</PackageProjectUrl>
@@ -19,6 +19,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="package-lock.json" />
+    <Content Remove="package.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\..\..\DMNuGet.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
@@ -26,6 +31,14 @@
     <None Include="..\..\..\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
+    </None>
+    <None Include="package-lock.json">
+      <Pack>False</Pack>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="package.json">
+      <Pack>False</Pack>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
@@ -44,13 +57,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="package-lock.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
-    <Content Update="package.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
     <Content Update="tsconfig.json">
+      <Pack>False</Pack>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -6,14 +6,10 @@
 ### Usage
 See the 'Sandbox' demo in the 'src' folder for a working example.
 
-### Installation
-- When you install the NuGet package you might see a Dependencies reference to NPM.
-The library does not require any NPM packages to run.
-The issue is being investigated, but for now you can safely ignore it.
-
-![NPM](NPM.png)
-
 ### Release Notes
+- 8.2.0
+  - Resolved issue with `Dependencies` reference to `NPM` being shown in Visual Studio
+  when adding package to a project.
 - 8.1.1
   - Added `LogRaw` method to log raw (not formatted with template) messages with optional style.
     - i.e. `LogRaw("Hello World", "color: red; font-size: 20px;")`
