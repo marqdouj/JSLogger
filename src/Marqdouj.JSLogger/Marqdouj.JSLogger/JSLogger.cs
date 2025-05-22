@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using System.Text;
@@ -17,6 +15,9 @@ namespace Marqdouj.JSLogger
         bool DetailedErrors { get; set; }
 
         ValueTask DisposeAsync();
+
+        IDisposable BeginScope<TState>(TState state);
+
         bool IsEnabled(LogLevel logLevel);
         ValueTask Log(LogLevel logLevel, string message, string eventId = "");
         ValueTask LogCritical(string message, string eventId = "");
@@ -43,11 +44,13 @@ namespace Marqdouj.JSLogger
         }
     }
 
-    public class JSLogger(IJSRuntime jsRuntime) : IAsyncDisposable, IJSLogger
+    public partial class JSLogger(IJSRuntime jsRuntime) : IAsyncDisposable, IJSLogger
     {
         private readonly Lazy<Task<IJSObjectReference>> moduleTask = new(() => jsRuntime.InvokeAsync<IJSObjectReference>(
                 "import", "./_content/Marqdouj.JSLogger/js/jsLogger.js").AsTask());
         private IJSLoggerConfig config = new JSLoggerConfig();
+
+        private static readonly AsyncLocal<Stack<string?>?> _scopes = new();
 
         public JSLogger(IJSRuntime jsRuntime, IJSLoggerConfig config) : this(jsRuntime)
         {
@@ -121,7 +124,7 @@ namespace Marqdouj.JSLogger
             if (!IsEnabled(logLevel))
                 return;
 
-            var logEvent = BuildLogEventIdentifier(logLevel);
+            var logEvent = logLevel.BuildLogEventIdentifier("");
             var module = await moduleTask.Value;
 
             await module.InvokeVoidAsync(logEvent, Config, message, eventId);
@@ -131,22 +134,6 @@ namespace Marqdouj.JSLogger
         {
             var module = await moduleTask.Value;
             await module.InvokeVoidAsync("test", Config, message);
-        }
-
-        private static string BuildLogEventIdentifier(LogLevel logLevel)
-        {
-            string? logLevelName = logLevel switch
-            {
-                LogLevel.Trace => "Trace",
-                LogLevel.Debug => "Debug",
-                LogLevel.Information => "Information",
-                LogLevel.Warning => "Warning",
-                LogLevel.Error => "Error",
-                LogLevel.Critical => "Critical",
-                _ => throw new ArgumentOutOfRangeException(nameof(logLevel), logLevel, "LogLevel not supported for logging."),
-            };
-            var path = $"Logger.log{logLevelName}";
-            return path;
         }
 
         public async ValueTask DisposeAsync()
@@ -162,29 +149,26 @@ namespace Marqdouj.JSLogger
             catch (JSDisconnectedException)
             {
             }
-        }
-    }
-
-    public static class JSLoggerExtensions
-    {
-        public static IServiceCollection AddLoggerModule(this IServiceCollection services, IJSLoggerConfig? config)
-        {
-            if (config is not null)
+            finally
             {
-                services.AddSingleton(config);
+                // Suppress finalization to comply with CA1816
+                GC.SuppressFinalize(this);
             }
-
-            services.AddScoped<IJSLogger, JSLogger>();
-            services.AddScoped(typeof(IJSLogger<>), typeof(JSLogger<>));
-
-            return services;
         }
 
-        public static IHostApplicationBuilder AddLoggerModule(this IHostApplicationBuilder builder, IJSLoggerConfig? config)
+        public IDisposable BeginScope<TState>(TState state)
         {
-            builder.Services.AddLoggerModule(config);
-            return builder;
+            _scopes.Value ??= new Stack<string?>();
+            _scopes.Value.Push(state?.ToString());
+
+            return new LoggerScope(() =>
+            {
+                _scopes.Value.Pop();
+                if (_scopes.Value.Count == 0)
+                {
+                    _scopes.Value = null;
+                }
+            });
         }
     }
-
 }

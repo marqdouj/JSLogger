@@ -31,6 +31,7 @@
                 <FluentButton @onclick="(() => TestLogger())">Test All</FluentButton>
                 <FluentSpacer />
                 <FluentButton @onclick="(() => TestRaw())">Test Raw</FluentButton>
+                <FluentButton @onclick="(() => TestScope())">Test Scope</FluentButton>
                 <FluentSpacer />
                 <FluentButton @onclick="(() => TestLogger(LogLevel.Trace))">Trace</FluentButton>
                 <FluentButton @onclick="(() => TestLogger(LogLevel.Debug))">Debug</FluentButton>
@@ -47,6 +48,7 @@
                 <FluentButton @onclick="(() => TestLogger(true))">Test All</FluentButton>
                 <FluentSpacer />
                 <FluentButton @onclick="(() => TestRaw(true))">Test Raw</FluentButton>
+                <FluentButton @onclick="(() => TestScope(true))">Test Scope</FluentButton>
                 <FluentSpacer />
                 <FluentButton @onclick="(() => TestLogger(LogLevel.Trace, true))">Trace</FluentButton>
                 <FluentButton @onclick="(() => TestLogger(LogLevel.Debug, true))">Debug</FluentButton>
@@ -75,6 +77,31 @@
         else
         {
             await JSLogger.LogRaw("Test 'Raw' from Module", "color: orange; font-size: 20px;");
+        }
+    }
+
+    private void TestScope(bool useService = false)
+    {
+        IJSLogger logger;
+        string source;
+
+        if (useService)
+        {
+            logger = JSLoggerS;
+            source = "Global Script";
+        }
+        else
+        {
+            logger = JSLogger;
+            source = "Module";
+        }
+
+        using (var scope = logger.BeginScope("TestScope"))
+        {
+            var t = DateTime.Now.ToShortTimeString();
+            logger.LogInformation($"'Test Scope 1 of 3' from {source} : {t}");
+            logger.LogInformation($"'Test Scope 2 of 3' from {source} : {t}");
+            logger.LogInformation($"'Test Scope 3 of 3' from {source} : {t}");
         }
     }
 

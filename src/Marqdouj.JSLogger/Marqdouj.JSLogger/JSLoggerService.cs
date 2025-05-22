@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using System.Text;
 
@@ -32,6 +30,8 @@ namespace Marqdouj.JSLogger
         private readonly IJSRuntime jsRuntime = jsRuntime;
         private IJSLoggerConfig config = new JSLoggerConfig();
         private const string libName = "MarqdoujJsl";
+
+        private static readonly AsyncLocal<Stack<string?>?> _scopes = new();
 
         public JSLoggerService(IJSRuntime jsRuntime, IJSLoggerConfig config) : this(jsRuntime)
         {
@@ -104,7 +104,7 @@ namespace Marqdouj.JSLogger
             if (!IsEnabled(logLevel))
                 return;
 
-            var logEvent = BuildLogEventIdentifier(logLevel);
+            var logEvent = logLevel.BuildLogEventIdentifier(libName);
 
             await jsRuntime.InvokeVoidAsync(logEvent, Config, message, eventId);
         }
@@ -114,48 +114,28 @@ namespace Marqdouj.JSLogger
             await jsRuntime.InvokeVoidAsync($"{libName}.test", Config, message);
         }
 
-        private static string BuildLogEventIdentifier(LogLevel logLevel)
-        {
-            string? logLevelName = logLevel switch
-            {
-                LogLevel.Trace => "Trace",
-                LogLevel.Debug => "Debug",
-                LogLevel.Information => "Information",
-                LogLevel.Warning => "Warning",
-                LogLevel.Error => "Error",
-                LogLevel.Critical => "Critical",
-                _ => throw new ArgumentOutOfRangeException(nameof(logLevel), logLevel, "LogLevel not supported for logging."),
-            };
-            var path = $"{libName}.Logger.log{logLevelName}";
-            return path;
-        }
-
         public async ValueTask DisposeAsync()
         {
             //required for IJSLogger
             await Task.CompletedTask;
-        }
-    }
 
-    public static class LoggerServiceExtensions
-    {
-        public static IServiceCollection AddLoggerService(this IServiceCollection services, IJSLoggerConfig? config)
+            // Suppress finalization to comply with CA1816
+            GC.SuppressFinalize(this);
+        }
+
+        public IDisposable BeginScope<TState>(TState state)
         {
-            if (config is not null)
+            _scopes.Value ??= new Stack<string?>();
+            _scopes.Value.Push(state?.ToString());
+
+            return new LoggerScope(() =>
             {
-                services.AddSingleton(config);
-            }
-
-            services.AddScoped<IJSLoggerService, JSLoggerService>();
-            services.AddScoped(typeof(IJSLoggerService<>), typeof(JSLoggerService<>));
-
-            return services;
-        }
-        
-        public static IHostApplicationBuilder AddLoggerService(this IHostApplicationBuilder builder, IJSLoggerConfig? config)
-        {
-            builder.Services.AddLoggerService(config);
-            return builder;
+                _scopes.Value.Pop();
+                if (_scopes.Value.Count == 0)
+                {
+                    _scopes.Value = null;
+                }
+            });
         }
     }
 }

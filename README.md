@@ -11,6 +11,8 @@
 See the 'Sandbox' demo in the 'src' folder for a working example.
 
 ### Release
+- 8.5.1
+  - Implement `IDisposable BeginScope<TState>(TState state)`
 - 8.5.0
   - Fixed issues with Visual Studio packaging.
   - The Module (jslogger.js) or Global (jslogger-bundled.js) script can be configured as a service that gets injected into your razor components. 
