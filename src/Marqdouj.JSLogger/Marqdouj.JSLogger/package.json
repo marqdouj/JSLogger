@@ -1,7 +1,7 @@
 {
-  "name": "marqdouj.jshelpers",
+  "name": "marqdouj.jslogger",
   "version": "1.0.0",
-  "main": "./wwwroot/dist/bundle.js",
+  "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:dev": "webpack --mode=development",
