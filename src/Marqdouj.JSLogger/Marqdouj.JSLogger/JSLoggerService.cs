@@ -6,28 +6,50 @@ using System.Text;
 
 namespace Marqdouj.JSLogger
 {
+    public interface IJSLoggerService<T> : IJSLoggerService where T : class
+    {
+    }
+
     public interface IJSLoggerService : IJSLogger
     {
     }
 
-    public class JSLoggerService(
-            IJSRuntime jsRuntime,
-            IJSLoggerConfig config) : IJSLoggerService
+    public class JSLoggerService<T> : JSLoggerService, IJSLoggerService<T> where T : class
+    {
+        public JSLoggerService(IJSRuntime jsRuntime) : base(jsRuntime)
+        {
+            this.Config.Category = typeof(T).Name;
+        }
+
+        public JSLoggerService(IJSRuntime jsRuntime, IJSLoggerConfig config) : base(jsRuntime, config)
+        {
+            this.Config.Category = typeof(T).Name;
+        }
+    }
+
+    public class JSLoggerService(IJSRuntime jsRuntime) : IAsyncDisposable, IJSLoggerService
     {
         private readonly IJSRuntime jsRuntime = jsRuntime;
+        private IJSLoggerConfig config = new JSLoggerConfig();
+        private const string libName = "MarqdoujJsl";
 
-        /// <summary>
-        /// Flag to log the exception details.
-        /// </summary>
-        public bool DetailedErrors { get; set; } = true;
+        public JSLoggerService(IJSRuntime jsRuntime, IJSLoggerConfig config) : this(jsRuntime)
+        {
+            Config = config ?? throw new ArgumentNullException(nameof(config));
+        }
 
-        public IJSLoggerConfig Config { get; } = (IJSLoggerConfig)config.Clone();
+        public IJSLoggerConfig Config { get => config; set { ArgumentNullException.ThrowIfNull(value, nameof(Config)); config = value; } }
 
         public bool IsEnabled(LogLevel logLevel) => Config.IsEnabled(logLevel);
 
+        /// <summary>
+        /// Flag to include full exception details when logging an exception.
+        /// </summary>
+        public bool DetailedErrors { get; set; } = true;
+
         public async ValueTask LogRaw(string message, string style = "")
         {
-            await jsRuntime.InvokeVoidAsync("MarqdoujJsl.Logger.logRaw", message, style);
+            await jsRuntime.InvokeVoidAsync($"{libName}.Logger.logRaw", message, style);
         }
 
         public async ValueTask LogTrace(string message, string eventId = "")
@@ -83,13 +105,15 @@ namespace Marqdouj.JSLogger
                 return;
 
             var logEvent = BuildLogEventIdentifier(logLevel);
+
             await jsRuntime.InvokeVoidAsync(logEvent, Config, message, eventId);
         }
 
         public async ValueTask Test(string message = "")
         {
-            await jsRuntime.InvokeVoidAsync("MarqdoujJsl.test", Config, message);
+            await jsRuntime.InvokeVoidAsync($"{libName}.test", Config, message);
         }
+
         private static string BuildLogEventIdentifier(LogLevel logLevel)
         {
             string? logLevelName = logLevel switch
@@ -102,18 +126,35 @@ namespace Marqdouj.JSLogger
                 LogLevel.Critical => "Critical",
                 _ => throw new ArgumentOutOfRangeException(nameof(logLevel), logLevel, "LogLevel not supported for logging."),
             };
-            var path = $"MarqdoujJsl.Logger.log{logLevelName}";
+            var path = $"{libName}.Logger.log{logLevelName}";
             return path;
         }
 
+        public async ValueTask DisposeAsync()
+        {
+            //required for IJSLogger
+            await Task.CompletedTask;
+        }
     }
 
     public static class LoggerServiceExtensions
     {
-        public static IHostApplicationBuilder AddLoggerService(this IHostApplicationBuilder builder, IJSLoggerConfig config)
+        public static IServiceCollection AddLoggerService(this IServiceCollection services, IJSLoggerConfig? config)
         {
-            builder.Services.AddSingleton(config);
-            builder.Services.AddScoped<IJSLoggerService, JSLoggerService>();
+            if (config is not null)
+            {
+                services.AddSingleton(config);
+            }
+
+            services.AddScoped<IJSLoggerService, JSLoggerService>();
+            services.AddScoped(typeof(IJSLoggerService<>), typeof(JSLoggerService<>));
+
+            return services;
+        }
+        
+        public static IHostApplicationBuilder AddLoggerService(this IHostApplicationBuilder builder, IJSLoggerConfig? config)
+        {
+            builder.Services.AddLoggerService(config);
             return builder;
         }
     }

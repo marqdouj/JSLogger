@@ -9,7 +9,12 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddFluentUIComponents();
 
-builder.AddLoggerService(new JSLoggerConfig());
+/*
+For the purpose of this demo, both type of loggers are configured. 
+normally you would only configure one type of logger service.
+*/
+builder.AddLoggerModule(null);
+builder.AddLoggerService(null); /*See `App.Razor` for how to add the global script required for this service */
 
 var app = builder.Build();
 

@@ -1,8 +1,11 @@
 ﻿@page "/logger-demo"
 @rendermode InteractiveServer
-@implements IAsyncDisposable
-@inject IJSRuntime JS
-@inject IJSLoggerService LoggerService
+@* 
+For the purpose of this demo, both type of loggers are configured. 
+normally you would only configure one type of logger service (see Program.cs). 
+*@
+@inject IJSLogger<LoggerDemo> JSLogger
+@inject IJSLoggerService<LoggerDemo> JSLoggerS
 
 <FluentStack Orientation="Orientation.Vertical">
     <FluentCard>
@@ -40,44 +43,21 @@
 </FluentStack>
 
 @code {
-    private JSLogger? module;
-
     protected override void OnInitialized()
     {
-        LoggerService.Config.SetLevel(LogLevel.Trace, LogLevel.Critical);
-    }
-
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if (firstRender)
-        {
-            module = new JSLogger<LoggerDemo>(JS, LogLevel.Trace);
-        }
-    }
-
-    async ValueTask IAsyncDisposable.DisposeAsync()
-    {
-        if (module is not null)
-        {
-            try
-            {
-                await module.DisposeAsync();
-            }
-            catch (JSDisconnectedException)
-            {
-            }
-        }
+        JSLogger.Config.SetLevel(LogLevel.Trace, LogLevel.Critical);
+        JSLoggerS.Config.SetLevel(LogLevel.Trace, LogLevel.Critical);
     }
 
     private async Task TestRaw(bool useService = false)
     {
         if (useService)
         {
-            await LoggerService.LogRaw("Test 'Raw' from Service", "color: orange; font-size: 20px;");
+            await JSLogger.LogRaw("Test 'Raw' from Service", "color: orange; font-size: 20px;");
         }
         else
         {
-            await module!.LogRaw("Test 'Raw' from Module", "color: orange; font-size: 20px;");
+            await JSLoggerS.LogRaw("Test 'Raw' from Global Script", "color: orange; font-size: 20px;");
         }
     }
 
@@ -85,20 +65,20 @@
     {
         if (useService)
         {
-            await LoggerService.LogRaw("Test 'Raw' from Service", "color: orange; font-size: 20px;");
-            await LoggerService.Test("Test All from Service");
+            await JSLogger.LogRaw("Test 'Raw' from Service", "color: orange; font-size: 20px;");
+            await JSLogger.Test("Test All from Service");
         }
         else
         {
-            await module!.LogRaw("Test 'Raw' from Module", "color: orange; font-size: 20px;");
-            await module!.Test("Test All from Module");
+            await JSLoggerS.LogRaw("Test 'Raw' from Global Script", "color: orange; font-size: 20px;");
+            await JSLoggerS.Test("Test All from Global Script");
         }
     }
 
     private async Task TestLogger(LogLevel level, bool useService = false)
     {
-        IJSLogger logger = useService ? LoggerService : module!;
-        var eventName = useService ? "Logger Service" : "Logger Module";
+        IJSLogger logger = useService ? JSLogger : JSLoggerS!;
+        var eventName = useService ? "Logger Module" : "Logger Script";
 
         switch (level)
         {
@@ -124,7 +104,7 @@
                 {
                     await logger.LogError(ex, eventName);
                 }
-                
+
                 break;
             case LogLevel.Critical:
                 await logger.LogCritical("Critical message from logger demo page.", eventName);

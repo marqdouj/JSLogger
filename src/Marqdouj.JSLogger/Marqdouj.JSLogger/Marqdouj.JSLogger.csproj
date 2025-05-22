@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>8.2.0</Version>
+    <Version>8.3.0</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>JS Console Logger for Blazor</Title>
     <PackageProjectUrl>https://github.com/marqdouj/JSLogger</PackageProjectUrl>
@@ -34,11 +34,9 @@
     </None>
     <None Include="package-lock.json">
       <Pack>False</Pack>
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
     <None Include="package.json">
       <Pack>False</Pack>
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
@@ -58,6 +56,14 @@
 
   <ItemGroup>
     <Content Update="tsconfig.json">
+      <Pack>False</Pack>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot/js/jsLogger.json">
+      <Pack>False</Pack>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot/js/jsLogger-bundle.json">
       <Pack>False</Pack>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>

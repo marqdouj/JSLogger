@@ -5,11 +5,11 @@ namespace Marqdouj.JSLogger
     public interface IJSLoggerConfig : ICloneable
     {
         string DefaultTemplate { get; set; }
-        string Category { get; }
+        string Category { get; set; }
         bool IsEnabled(LogLevel logLevel);
         LogLevel MaxLevel { get; }
         LogLevel MinLevel { get; }
-        string Template { get; }
+        string Template { get; set; }
 
         void SetLevel(LogLevel min, LogLevel max);
     }
@@ -17,6 +17,7 @@ namespace Marqdouj.JSLogger
     public class JSLoggerConfig : IJSLoggerConfig
     {
         private static string defaultTemplate = "{category}{event}{timestamp}{level}: {message}";
+        private string template = defaultTemplate;
 
         public string DefaultTemplate
         {
@@ -28,17 +29,17 @@ namespace Marqdouj.JSLogger
             }
         }
 
-        public JSLoggerConfig(string category = "", LogLevel min = LogLevel.Information, LogLevel max = LogLevel.Critical, string template = "")
+        public JSLoggerConfig(string? category = null, LogLevel min = LogLevel.Information, LogLevel max = LogLevel.Critical, string template = "")
         {
-            Category = category;
+            Category = category ?? nameof(JSLogger);
             Template = string.IsNullOrWhiteSpace(template) ? DefaultTemplate : template;
             SetLevel(min, max);
         }
 
-        public string Category { get; }
+        public string Category { get; set; }
         public LogLevel MinLevel { get; private set; } = LogLevel.Information;
         public LogLevel MaxLevel { get; private set; } = LogLevel.Critical;
-        public string Template { get; }
+        public string Template { get => template; set { ArgumentNullException.ThrowIfNullOrWhiteSpace(value, nameof(Template)); template = value; } }
 
         public bool IsEnabled(LogLevel logLevel)
         {

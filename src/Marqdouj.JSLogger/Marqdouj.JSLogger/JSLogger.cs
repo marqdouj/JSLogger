@@ -1,51 +1,65 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using System.Text;
 
 namespace Marqdouj.JSLogger
 {
-    public class JSLogger<T>(
-        IJSRuntime jsRuntime,
-        LogLevel min = LogLevel.Information,
-        LogLevel max = LogLevel.Critical,
-        string template = "") : JSLogger(jsRuntime, typeof(T).Name, min, max, template) where T : class
+    public interface IJSLogger<T> : IJSLogger where T : class
     {
+
     }
 
     public interface IJSLogger
     {
-        IJSLoggerConfig Config { get; }
+        IJSLoggerConfig Config { get; set; }
         bool DetailedErrors { get; set; }
 
+        ValueTask DisposeAsync();
         bool IsEnabled(LogLevel logLevel);
-        ValueTask LogRaw(string message, string style = "");
         ValueTask Log(LogLevel logLevel, string message, string eventId = "");
         ValueTask LogCritical(string message, string eventId = "");
         ValueTask LogDebug(string message, string eventId = "");
         ValueTask LogError(Exception exception, string eventId = "");
         ValueTask LogError(string message, string eventId = "");
         ValueTask LogInformation(string message, string eventId = "");
+        ValueTask LogRaw(string message, string style = "");
         ValueTask LogTrace(string message, string eventId = "");
         ValueTask LogWarning(string message, string eventId = "");
         ValueTask Test(string message = "");
     }
 
-    public class JSLogger(
-        IJSRuntime jsRuntime,
-        string category,
-        LogLevel min = LogLevel.Information,
-        LogLevel max = LogLevel.Critical,
-        string template = "") : IAsyncDisposable, IJSLogger
+    public class JSLogger<T> : JSLogger, IJSLogger<T> where T : class
+    {
+        public JSLogger(IJSRuntime jsRuntime) : base(jsRuntime)
+        {
+            this.Config.Category = typeof(T).Name;
+        }
+
+        public JSLogger(IJSRuntime jsRuntime, IJSLoggerConfig config) : base(jsRuntime, config)
+        {
+            this.Config.Category = typeof(T).Name;
+        }
+    }
+
+    public class JSLogger(IJSRuntime jsRuntime) : IAsyncDisposable, IJSLogger
     {
         private readonly Lazy<Task<IJSObjectReference>> moduleTask = new(() => jsRuntime.InvokeAsync<IJSObjectReference>(
                 "import", "./_content/Marqdouj.JSLogger/js/jsLogger.js").AsTask());
+        private IJSLoggerConfig config = new JSLoggerConfig();
 
-        public IJSLoggerConfig Config { get; init; } = new JSLoggerConfig(category, min, max, template);
+        public JSLogger(IJSRuntime jsRuntime, IJSLoggerConfig config) : this(jsRuntime)
+        {
+            Config = config ?? throw new ArgumentNullException(nameof(config));
+        }
+
+        public IJSLoggerConfig Config { get => config; set { ArgumentNullException.ThrowIfNull(value, nameof(Config)); config = value; } }
 
         public bool IsEnabled(LogLevel logLevel) => Config.IsEnabled(logLevel);
 
         /// <summary>
-        /// Flag to log the exception details.
+        /// Flag to include full exception details when logging an exception.
         /// </summary>
         public bool DetailedErrors { get; set; } = true;
 
@@ -119,15 +133,6 @@ namespace Marqdouj.JSLogger
             await module.InvokeVoidAsync("test", Config, message);
         }
 
-        public async ValueTask DisposeAsync()
-        {
-            if (moduleTask.IsValueCreated)
-            {
-                var module = await moduleTask.Value;
-                await module.DisposeAsync();
-            }
-        }
-
         private static string BuildLogEventIdentifier(LogLevel logLevel)
         {
             string? logLevelName = logLevel switch
@@ -143,5 +148,43 @@ namespace Marqdouj.JSLogger
             var path = $"Logger.log{logLevelName}";
             return path;
         }
+
+        public async ValueTask DisposeAsync()
+        {
+            try
+            {
+                if (moduleTask.IsValueCreated)
+                {
+                    var module = await moduleTask.Value;
+                    await module.DisposeAsync();
+                }
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
     }
+
+    public static class JSLoggerExtensions
+    {
+        public static IServiceCollection AddLoggerModule(this IServiceCollection services, IJSLoggerConfig? config)
+        {
+            if (config is not null)
+            {
+                services.AddSingleton(config);
+            }
+
+            services.AddScoped<IJSLogger, JSLogger>();
+            services.AddScoped(typeof(IJSLogger<>), typeof(JSLogger<>));
+
+            return services;
+        }
+
+        public static IHostApplicationBuilder AddLoggerModule(this IHostApplicationBuilder builder, IJSLoggerConfig? config)
+        {
+            builder.Services.AddLoggerModule(config);
+            return builder;
+        }
+    }
+
 }
