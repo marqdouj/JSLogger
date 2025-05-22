@@ -3,6 +3,8 @@
 ## This library provides a simple way to log messages to the JavaScript console from Blazor, using JS Interop.
 - It is not an implementation of ILogger, but rather mimics most methods of ILogger as async ValueTask.
 
+### NuGet Package is [here](https://www.nuget.org/packages/Marqdouj.JSLogger/)
+
 ### Usage
 See the 'Sandbox' demo in the 'src' folder for a working example.
 
