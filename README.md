@@ -6,7 +6,10 @@
 ### Usage
 See the 'Sandbox' demo in the 'src' folder for a working example.
 
-### Release 
+### Release
+- **Under Investigation**
+  - The "DiscoverPrecompressedAssets" issue was fixed, however this broke
+  the JSLogger. For now, just configure the JSLoggerService and not JSLogger
 - 8.3.0
   - Fixed issue with "DiscoverPrecompressedAssets" task failed unexpectedly error
   - Added methods to provide both the Module and Global script as a service 
