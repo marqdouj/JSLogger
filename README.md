@@ -3,7 +3,7 @@
 ## This library provides a simple way to log messages to the JavaScript console from Blazor, using JS Interop.
 - It is not an implementation of ILogger, but rather mimics most methods of ILogger as async ValueTask.
 
-## The demo of all of my NuGet packages is [here](https://github.com/marqdouj/Blazor-Demos/)
+## The demo of all of my NuGet packages is [here](https://github.com/marqdouj/BlazorSandbox/)
 
 ## The NuGet Package is [here](https://www.nuget.org/packages/Marqdouj.JSLogger/)
 
@@ -11,6 +11,8 @@
 See the 'Sandbox' demo in the 'src' folder for a working example.
 
 ### Release
+- 8.5.2
+  - Update ReadMe
 - 8.5.1
   - Implement `IDisposable BeginScope<TState>(TState state)`
 - 8.5.0
